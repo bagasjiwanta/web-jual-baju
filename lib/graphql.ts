@@ -15,7 +15,12 @@ export type Image = {
   height: number;
 };
 
-export async function getAllProducts(): Promise<Cloth[]> {
+export type GetAllProductsProps = {
+  data: Cloth[] | null;
+  error: string | null;
+}
+
+export async function getAllProducts(): Promise<GetAllProductsProps> {
   const query = gql`
     query Assets {
       clothes {
@@ -23,6 +28,7 @@ export async function getAllProducts(): Promise<Cloth[]> {
         image {
           url
           height
+          width
         }
         name
         price
@@ -37,9 +43,56 @@ export async function getAllProducts(): Promise<Cloth[]> {
       process.env.GRAPHQL_API_ENDPOINT ?? "",
       query
     );
-    return response?.data.clothes;
+    return {
+      data: response?.clothes,
+      error: null,
+    };
   } catch (err) {
-    console.log(err);
-    return [];
+    return {
+      data: null,
+      error: JSON.stringify(err),
+    };
+  }
+}
+
+export async function getProductBySlug(slug: string): Promise<{
+  data: Cloth | null;
+  error: string | null;
+}> {
+  const query = gql`
+    query MyQuery($slug: String) {
+      cloth(where: { slug: $slug }) {
+        name
+        price
+        sizes
+        image {
+          url
+          height
+          width
+        }
+        description
+      }
+    }
+  `;
+
+  const variables = {
+    slug: slug
+  };
+  
+  try {
+    const response = await request(
+      process.env.GRAPHQL_API_ENDPOINT ?? "",
+      query,
+      variables
+    );
+    return {
+      data: response?.cloth,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: JSON.stringify(err),
+    };
   }
 }
